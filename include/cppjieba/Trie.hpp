@@ -36,6 +36,26 @@ struct Dag {
   }
 }; // struct Dag
 
+struct CutContext
+{
+    vector<WordRange> wrs;
+    vector<Dag> dags;
+    vector<WordRange> hmmRes;
+    vector<int> path;
+    vector<double> weight;
+    vector<size_t> status;
+
+    void Reset()
+    {
+        wrs.resize(0);
+        dags.resize(0);
+        hmmRes.resize(0);
+        path.resize(0);
+        weight.resize(0);
+        status.resize(0);
+    }
+};
+
 typedef Rune TrieKey;
 
 class TrieNode {

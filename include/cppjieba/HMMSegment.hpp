@@ -43,7 +43,7 @@ class HMMSegment: public SegmentBase {
     words.reserve(wrs.size());
     GetWordsFromWordRanges(sentence, wrs, words);
   }
-  void Cut(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<WordRange>& res) const {
+  void Cut(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<WordRange>& res, CutContext * pCtx = nullptr ) const {
     RuneStrArray::const_iterator left = begin;
     RuneStrArray::const_iterator right = begin;
     while (right != end) {
@@ -71,7 +71,7 @@ class HMMSegment: public SegmentBase {
       }
     }
     if (left != right) {
-      InternalCut(left, right, res);
+      InternalCut(left, right, res, pCtx );
     }
   }
  private:
@@ -111,9 +111,11 @@ class HMMSegment: public SegmentBase {
     }
     return begin;
   }
-  void InternalCut(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<WordRange>& res) const {
-    vector<size_t> status;
-    Viterbi(begin, end, status);
+
+  void InternalCut(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<WordRange>& res, CutContext * pCtx = nullptr ) const {
+    vector<size_t> statusInternal;
+    vector<size_t> & status = pCtx ? pCtx->status : statusInternal;
+    Viterbi(begin, end, status, pCtx);
 
     RuneStrArray::const_iterator left = begin;
     RuneStrArray::const_iterator right;
@@ -129,7 +131,7 @@ class HMMSegment: public SegmentBase {
 
   void Viterbi(RuneStrArray::const_iterator begin, 
         RuneStrArray::const_iterator end, 
-        vector<size_t>& status) const {
+        vector<size_t>& status, CutContext * pCtx = nullptr ) const {
     size_t Y = HMMModel::STATUS_SUM;
     size_t X = end - begin;
 
@@ -137,8 +139,14 @@ class HMMSegment: public SegmentBase {
     size_t now, old, stat;
     double tmp, endE, endS;
 
-    vector<int> path(XYSize);
-    vector<double> weight(XYSize);
+    vector<int> localPath;
+    vector<double> localWeight;
+
+    vector<int> & path = pCtx ? pCtx->path : localPath;
+    vector<double> & weight = pCtx ? pCtx->weight : localWeight;
+
+    path.resize(XYSize);
+    weight.resize(XYSize);
 
     //start
     for (size_t y = 0; y < Y; y++) {

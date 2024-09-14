@@ -20,6 +20,7 @@ struct Word {
   uint32_t offset;
   uint32_t unicode_offset;
   uint32_t unicode_length;
+  Word() = default;
   Word(const string& w, uint32_t o)
    : word(w), offset(o) {
   }
@@ -59,6 +60,8 @@ typedef limonp::LocalVector<struct RuneStr> RuneStrArray;
 struct WordRange {
   RuneStrArray::const_iterator left;
   RuneStrArray::const_iterator right;
+
+  WordRange() = default;
   WordRange(RuneStrArray::const_iterator l, RuneStrArray::const_iterator r)
    : left(l), right(r) {
   }
@@ -160,6 +163,10 @@ inline bool DecodeRunesInString(const string& s, RuneStrArray& runes) {
   return DecodeRunesInString(s.c_str(), s.size(), runes);
 }
 
+inline bool DecodeRunesInString(const std::string_view & s, RuneStrArray& runes) {
+    return DecodeRunesInString(s.data(), s.size(), runes);
+}
+
 inline bool DecodeRunesInString(const char* s, size_t len, Unicode& unicode) {
   unicode.clear();
   RuneStrArray runes;
@@ -190,11 +197,12 @@ inline Unicode DecodeRunesInString(const string& s) {
 
 
 // [left, right]
-inline Word GetWordFromRunes(const string& s, RuneStrArray::const_iterator left, RuneStrArray::const_iterator right) {
+template <typename STRING>
+inline Word GetWordFromRunes(const STRING & s, RuneStrArray::const_iterator left, RuneStrArray::const_iterator right) {
   assert(right->offset >= left->offset);
   uint32_t len = right->offset - left->offset + right->len;
   uint32_t unicode_length = right->unicode_offset - left->unicode_offset + right->unicode_length;
-  return Word(s.substr(left->offset, len), left->offset, left->unicode_offset, unicode_length);
+  return Word(string(s.substr(left->offset, len)), left->offset, left->unicode_offset, unicode_length);
 }
 
 inline string GetStringFromRunes(const string& s, RuneStrArray::const_iterator left, RuneStrArray::const_iterator right) {
@@ -203,7 +211,8 @@ inline string GetStringFromRunes(const string& s, RuneStrArray::const_iterator l
   return s.substr(left->offset, len);
 }
 
-inline void GetWordsFromWordRanges(const string& s, const vector<WordRange>& wrs, vector<Word>& words) {
+template <typename STRING>
+inline void GetWordsFromWordRanges(const STRING & s, const vector<WordRange>& wrs, vector<Word>& words) {
   for (size_t i = 0; i < wrs.size(); i++) {
     words.push_back(GetWordFromRunes(s, wrs[i].left, wrs[i].right));
   }

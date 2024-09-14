@@ -71,7 +71,7 @@ struct HMMModel {
     XCHECK(GetLine(ifile, line));
     XCHECK(LoadEmitProb(line, emitProbS));
   }
-  double GetEmitProb(const EmitProbMap* ptMp, Rune key, 
+  inline double GetEmitProb(const EmitProbMap* ptMp, Rune key, 
         double defVal)const {
     EmitProbMap::const_iterator cit = ptMp->find(key);
     if (cit == ptMp->end()) {

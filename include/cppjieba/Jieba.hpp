@@ -37,6 +37,9 @@ class Jieba {
   void Cut(const string& sentence, vector<Word>& words, bool hmm = true) const {
     mix_seg_.Cut(sentence, words, hmm);
   }
+  void Cut(const std::string_view & sentence, vector<Word>& words, CutContext & ctx, bool hmm = true) const {
+      mix_seg_.Cut(sentence, words, hmm, &ctx);
+  }
   void CutAll(const string& sentence, vector<string>& words) const {
     full_seg_.Cut(sentence, words);
   }

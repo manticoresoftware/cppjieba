@@ -22,16 +22,26 @@ class PreFilter {
     }
     cursor_ = sentence_.begin();
   }
+
+  PreFilter(const unordered_set<Rune>& symbols, 
+      const string_view & sentence)
+      : symbols_(symbols) {
+      if (!DecodeRunesInString(sentence, sentence_)) {
+          XLOG(ERROR) << "decode failed. "; 
+      }
+      cursor_ = sentence_.begin();
+  }
+
   ~PreFilter() {
   }
-  bool HasNext() const {
+  inline bool HasNext() const {
     return cursor_ != sentence_.end();
   }
   Range Next() {
     Range range;
     range.begin = cursor_;
     while (cursor_ != sentence_.end()) {
-      if (IsIn(symbols_, cursor_->rune)) {
+      if (Contains(symbols_, cursor_->rune)) {
         if (range.begin == cursor_) {
           cursor_ ++;
         }
@@ -47,6 +57,9 @@ class PreFilter {
   RuneStrArray::const_iterator cursor_;
   RuneStrArray sentence_;
   const unordered_set<Rune>& symbols_;
+
+  template<class KeyType, class ContainType>
+  inline bool Contains ( const ContainType& contain, const KeyType& key ) const { return contain.end() != contain.find(key); }
 }; // class PreFilter
 
 } // namespace cppjieba

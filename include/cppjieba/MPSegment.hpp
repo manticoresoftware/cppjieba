@@ -52,11 +52,14 @@ class MPSegment: public SegmentTagged {
     words.reserve(wrs.size());
     GetWordsFromWordRanges(sentence, wrs, words);
   }
+
   void Cut(RuneStrArray::const_iterator begin,
            RuneStrArray::const_iterator end,
            vector<WordRange>& words,
-           size_t max_word_len = MAX_WORD_LENGTH) const {
-    vector<Dag> dags;
+           size_t max_word_len = MAX_WORD_LENGTH,
+           CutContext * pCtx = nullptr) const {
+    vector<Dag> dagsLocal;
+    vector<Dag> & dags = pCtx ? pCtx->dags : dagsLocal;
     dictTrie_->Find(begin, 
           end, 
           dags,
