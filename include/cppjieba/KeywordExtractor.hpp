@@ -93,34 +93,44 @@ class KeywordExtractor {
   }
  private:
   void LoadIdfDict(const string& idfPath) {
-    ifstream ifs(idfPath.c_str());
-    XCHECK(ifs.is_open()) << "open " << idfPath << " failed";
-    string line ;
-    vector<string> buf;
+    FileReader_c tReader;
+    bool bOpenOk = tReader.Open(idfPath);
+    XCHECK(bOpenOk) << "open " << idfPath << " failed.";
+
     double idf = 0.0;
     double idfSum = 0.0;
     size_t lineno = 0;
-    for (; getline(ifs, line); lineno++) {
-      buf.clear();
-      if (line.empty()) {
+
+    const int MAX_LINE_LEN = 1024;
+    char dBuffer[MAX_LINE_LEN];
+    char * dValues[DICT_COLUMN_NUM];
+
+    int iLen = 0;
+    while ( ( iLen = tReader.GetLine ( dBuffer, sizeof(dBuffer) ) )>=0 )
+    {
+      if ( !iLen )
+      {
         XLOG(ERROR) << "lineno: " << lineno << " empty. skipped.";
         continue;
       }
-      Split(line, buf, " ");
-      if (buf.size() != 2) {
-        XLOG(ERROR) << "line: " << line << ", lineno: " << lineno << " empty. skipped.";
+
+      if ( !SplitText ( dBuffer, iLen, dValues, 2 ) )
+      {
+        XLOG(ERROR) << "line: " << dBuffer << ", lineno: " << lineno << " empty. skipped.";
         continue;
       }
-      idf = atof(buf[1].c_str());
-      idfMap_[buf[0]] = idf;
-      idfSum += idf;
 
+      idf = atof(dValues[1]);
+      idfMap_[dValues[0]] = idf;
+      idfSum += idf;
+      lineno++;
     }
 
     assert(lineno);
     idfAverage_ = idfSum / lineno;
     assert(idfAverage_ > 0.0);
   }
+
   void LoadStopWordDict(const string& filePath) {
     ifstream ifs(filePath.c_str());
     XCHECK(ifs.is_open()) << "open " << filePath << " failed";

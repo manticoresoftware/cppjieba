@@ -189,6 +189,10 @@ inline bool DecodeRunesInString(const string& s, Unicode& unicode) {
   return DecodeRunesInString(s.c_str(), s.size(), unicode);
 }
 
+inline bool DecodeRunesInString(const char * s, Unicode& unicode) {
+  return DecodeRunesInString(s, strlen(s), unicode);
+}
+
 inline Unicode DecodeRunesInString(const string& s) {
   Unicode result;
   DecodeRunesInString(s, result);

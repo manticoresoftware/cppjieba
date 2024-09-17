@@ -33,6 +33,7 @@ install(
 		${PROJECT_SOURCE_DIR}/include/cppjieba/TextRankExtractor.hpp
 		${PROJECT_SOURCE_DIR}/include/cppjieba/Trie.hpp
 		${PROJECT_SOURCE_DIR}/include/cppjieba/Unicode.hpp
+		${PROJECT_SOURCE_DIR}/include/cppjieba/reader.h
     DESTINATION include
 )
 

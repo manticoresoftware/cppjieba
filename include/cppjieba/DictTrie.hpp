@@ -14,6 +14,7 @@
 #include "limonp/Logging.hpp"
 #include "Unicode.hpp"
 #include "Trie.hpp"
+#include "reader.h"
 
 namespace cppjieba {
 
@@ -183,9 +184,11 @@ class DictTrie {
     assert(dictUnits.size());
     vector<Unicode> words;
     vector<const DictUnit*> valuePointers;
+    words.resize(dictUnits.size());
+    valuePointers.resize(dictUnits.size());
     for (size_t i = 0 ; i < dictUnits.size(); i ++) {
-      words.push_back(dictUnits[i].word);
-      valuePointers.push_back(&dictUnits[i]);
+      words[i] = dictUnits[i].word;
+      valuePointers[i] = &dictUnits[i];
     }
 
     trie_ = new Trie(words, valuePointers);
@@ -207,35 +210,63 @@ class DictTrie {
     return true;
   }
 
-  void LoadDict(const string& filePath) {
-    ifstream ifs(filePath.c_str());
-    XCHECK(ifs.is_open()) << "open " << filePath << " failed.";
-    string line;
-    vector<string> buf;
+    bool MakeNodeInfo(DictUnit& node_info,
+        const char * word,
+        double weight,
+        const char * tag )
+  {
+    if (!DecodeRunesInString(word, node_info.word)) {
+      XLOG(ERROR) << "Decode " << word << " failed.";
+      return false;
+    }
+    node_info.weight = weight;
+    node_info.tag = tag;
+    return true;
+  }
+
+  void LoadDict(const string& filePath)
+  {
+    FileReader_c tReader;
+    bool bOpenOk = tReader.Open(filePath);
+    XCHECK(bOpenOk) << "open " << filePath << " failed.";
+
+    std::streamsize fileSize = 0;
+    std::ifstream tmpFile ( filePath, std::ios::binary | std::ios::ate );
+    if ( tmpFile.is_open() )
+        fileSize = tmpFile.tellg();
+
+    const int AVG_LINE_LEN = 15;
+    static_node_infos_.reserve ( fileSize/AVG_LINE_LEN );
 
     DictUnit node_info;
-    for (size_t lineno = 0; getline(ifs, line); lineno++) {
-      Split(line, buf, " ");
-      XCHECK(buf.size() == DICT_COLUMN_NUM) << "split result illegal, line:" << line;
+    const int MAX_LINE_LEN = 1024;
+    char dBuffer[MAX_LINE_LEN];
+    char * dValues[DICT_COLUMN_NUM];
+
+    int iLen = 0;
+    while ( ( iLen = tReader.GetLine ( dBuffer, sizeof(dBuffer) ) )>=0 )
+    {
+      bool bSplitOk = SplitText ( dBuffer, iLen, dValues, DICT_COLUMN_NUM );
+      XCHECK(bSplitOk) << "split result illegal, line:" << dBuffer;
       MakeNodeInfo(node_info, 
-            buf[0], 
-            atof(buf[1].c_str()), 
-            buf[2]);
+            dValues[0], 
+            atof(dValues[1]), 
+            dValues[2]);
       static_node_infos_.push_back(node_info);
     }
   }
 
-  static bool WeightCompare(const DictUnit& lhs, const DictUnit& rhs) {
-    return lhs.weight < rhs.weight;
-  }
-
   void SetStaticWordWeights(UserWordWeightOption option) {
     XCHECK(!static_node_infos_.empty());
-    vector<DictUnit> x = static_node_infos_;
-    sort(x.begin(), x.end(), WeightCompare);
-    min_weight_ = x[0].weight;
-    max_weight_ = x[x.size() - 1].weight;
-    median_weight_ = x[x.size() / 2].weight;
+    std::vector<int> indices(static_node_infos_.size());
+    for ( size_t i = 0; i < indices.size(); i++ )
+        indices[i] = i;
+  
+    std::sort(indices.begin(), indices.end(), [this](size_t i1, size_t i2) { return static_node_infos_[i1].weight < static_node_infos_[i2].weight; });
+
+    min_weight_ = static_node_infos_[indices.front()].weight;
+    max_weight_ = static_node_infos_[indices.back()].weight;
+    median_weight_ = static_node_infos_[indices[indices.size() / 2]].weight;
     switch (option) {
      case WordWeightMin:
        user_word_default_weight_ = min_weight_;
