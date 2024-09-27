@@ -34,13 +34,15 @@ class MixSegment: public SegmentTagged {
   void Cut(const STRING & sentence, vector<Word>& words, bool hmm = true, CutContext * pCtx = nullptr ) const {
     PreFilter pre_filter(symbols_, sentence);
     PreFilter::Range range;
-    vector<WordRange> wrs;
+    vector<WordRange> wrsLocal;
+    vector<WordRange> & wrs = pCtx ? pCtx->wrs : wrsLocal;
+	wrs.resize(0);
     wrs.reserve(sentence.size() / 2);
     while (pre_filter.HasNext()) {
       range = pre_filter.Next();
       Cut(range.begin, range.end, wrs, hmm, pCtx);
     }
-    words.clear();
+    words.resize(0);
     words.reserve(wrs.size());
     GetWordsFromWordRanges(sentence, wrs, words);
   }
@@ -50,13 +52,18 @@ class MixSegment: public SegmentTagged {
       mpSeg_.Cut(begin, end, res, MAX_WORD_LENGTH, pCtx);
       return;
     }
-    vector<WordRange> words;
+
+    vector<WordRange> wordsLocal;
+    vector<WordRange> & words = pCtx ? pCtx->mixWords : wordsLocal;
+    words.resize(0);
+
     assert(end >= begin);
     words.reserve(end - begin);
     mpSeg_.Cut(begin, end, words, MAX_WORD_LENGTH, pCtx);
 
     vector<WordRange> hmmResLocal;
     vector<WordRange> & hmmRes = pCtx ? pCtx->hmmRes : hmmResLocal;
+	hmmRes.resize(0);
     hmmRes.reserve(end - begin);
     for (size_t i = 0; i < words.size(); i++) {
       //if mp Get a word, it's ok, put it into result

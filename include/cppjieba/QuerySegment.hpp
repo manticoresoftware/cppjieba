@@ -32,25 +32,29 @@ class QuerySegment: public SegmentBase {
     Cut(sentence, tmp, hmm);
     GetStringsFromWords(tmp, words);
   }
-  void Cut(const string& sentence, vector<Word>& words, bool hmm = true) const {
+  void Cut(const std::string_view& sentence, vector<Word>& words, bool hmm = true, CutContext * pCtx = nullptr) const {
     PreFilter pre_filter(symbols_, sentence);
     PreFilter::Range range;
-    vector<WordRange> wrs;
+    vector<WordRange> wrsLocal;
+    vector<WordRange> & wrs = pCtx ? pCtx->wrs : wrsLocal;
+	wrs.resize(0);
     wrs.reserve(sentence.size()/2);
     while (pre_filter.HasNext()) {
       range = pre_filter.Next();
-      Cut(range.begin, range.end, wrs, hmm);
+      Cut(range.begin, range.end, wrs, hmm, pCtx);
     }
-    words.clear();
+    words.resize(0);
     words.reserve(wrs.size());
     GetWordsFromWordRanges(sentence, wrs, words);
   }
-  void Cut(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<WordRange>& res, bool hmm) const {
+  void Cut(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<WordRange>& res, bool hmm, CutContext * pCtx = nullptr) const {
     //use mix Cut first
-    vector<WordRange> mixRes;
-    mixSeg_.Cut(begin, end, mixRes, hmm);
+    vector<WordRange> mixResLocal;
+    vector<WordRange> & mixRes = pCtx ? pCtx->mixRes : mixResLocal;
+	mixRes.resize(0);
 
-    vector<WordRange> fullRes;
+    mixSeg_.Cut(begin, end, mixRes, hmm, pCtx);
+
     for (vector<WordRange>::const_iterator mixResItr = mixRes.begin(); mixResItr != mixRes.end(); mixResItr++) {
       if (mixResItr->Length() > 2) {
         for (size_t i = 0; i + 1 < mixResItr->Length(); i++) {

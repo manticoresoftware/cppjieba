@@ -31,26 +31,26 @@ class FullSegment: public SegmentBase {
     Cut(sentence, tmp);
     GetStringsFromWords(tmp, words);
   }
-  void Cut(const string& sentence, 
-        vector<Word>& words) const {
+  void Cut(const std::string_view& sentence, 
+        vector<Word>& words, CutContext * pCtx = nullptr ) const {
     PreFilter pre_filter(symbols_, sentence);
     PreFilter::Range range;
-    vector<WordRange> wrs;
+    vector<WordRange> wrsLocal;
+    vector<WordRange> & wrs = pCtx ? pCtx->wrs : wrsLocal;
+	wrs.resize(0);
     wrs.reserve(sentence.size()/2);
     while (pre_filter.HasNext()) {
       range = pre_filter.Next();
-      Cut(range.begin, range.end, wrs);
+      Cut(range.begin, range.end, wrs, pCtx);
     }
-    words.clear();
+    words.resize(0);
     words.reserve(wrs.size());
     GetWordsFromWordRanges(sentence, wrs, words);
   }
   void Cut(RuneStrArray::const_iterator begin, 
         RuneStrArray::const_iterator end, 
-        vector<WordRange>& res) const {
-    // result of searching in trie tree
-    LocalVector<pair<size_t, const DictUnit*> > tRes;
-
+        vector<WordRange>& res,
+         CutContext * pCtx = nullptr) const {
     // max index of res's words
     size_t maxIdx = 0;
 
@@ -60,7 +60,9 @@ class FullSegment: public SegmentBase {
     // tmp variables
     size_t wordLen = 0;
     assert(dictTrie_);
-    vector<struct Dag> dags;
+    vector<Dag> dagsLocal;
+    vector<Dag> & dags = pCtx ? pCtx->dags : dagsLocal;
+	dags.resize(0);
     dictTrie_->Find(begin, end, dags);
     for (size_t i = 0; i < dags.size(); i++) {
       for (size_t j = 0; j < dags[i].nexts.size(); j++) {

@@ -60,6 +60,7 @@ class MPSegment: public SegmentTagged {
            CutContext * pCtx = nullptr) const {
     vector<Dag> dagsLocal;
     vector<Dag> & dags = pCtx ? pCtx->dags : dagsLocal;
+	dags.resize(0);
     dictTrie_->Find(begin, 
           end, 
           dags,

@@ -43,14 +43,14 @@ class Jieba {
   void CutAll(const string& sentence, vector<string>& words) const {
     full_seg_.Cut(sentence, words);
   }
-  void CutAll(const string& sentence, vector<Word>& words) const {
-    full_seg_.Cut(sentence, words);
+  void CutAll(const std::string_view & sentence, vector<Word>& words, CutContext & ctx) const {
+    full_seg_.Cut(sentence, words, &ctx);
   }
   void CutForSearch(const string& sentence, vector<string>& words, bool hmm = true) const {
     query_seg_.Cut(sentence, words, hmm);
   }
-  void CutForSearch(const string& sentence, vector<Word>& words, bool hmm = true) const {
-    query_seg_.Cut(sentence, words, hmm);
+  void CutForSearch(const std::string_view & sentence, vector<Word>& words, CutContext & ctx, bool hmm = true) const {
+    query_seg_.Cut(sentence, words, hmm, &ctx);
   }
   void CutHMM(const string& sentence, vector<string>& words) const {
     hmm_seg_.Cut(sentence, words);

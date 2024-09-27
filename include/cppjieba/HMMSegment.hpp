@@ -115,6 +115,8 @@ class HMMSegment: public SegmentBase {
   void InternalCut(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<WordRange>& res, CutContext * pCtx = nullptr ) const {
     vector<size_t> statusInternal;
     vector<size_t> & status = pCtx ? pCtx->status : statusInternal;
+    status.resize(0);
+
     Viterbi(begin, end, status, pCtx);
 
     RuneStrArray::const_iterator left = begin;
