@@ -58,6 +58,8 @@ inline int PreadWrapper ( int iFD, void * pBuf, size_t tCount, off_t tOff )
 #endif
 #endif	// _MSC_VER
 
+namespace FileUtil
+{
 
 class FileReader_c
 {
@@ -180,6 +182,8 @@ private:
 		m_pData = std::unique_ptr<uint8_t[]> ( new uint8_t[m_tSize] );
 	}
 };
+
+} // namespace FileUtil
 
 bool SplitText ( char * szText, int iLen, char ** dTokens, int iRequiredTokens )
   {

@@ -226,7 +226,7 @@ class DictTrie {
 
   void LoadDict(const string& filePath)
   {
-    FileReader_c tReader;
+    FileUtil::FileReader_c tReader;
     bool bOpenOk = tReader.Open(filePath);
     XCHECK(bOpenOk) << "open " << filePath << " failed.";
 

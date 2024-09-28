@@ -93,7 +93,7 @@ class KeywordExtractor {
   }
  private:
   void LoadIdfDict(const string& idfPath) {
-    FileReader_c tReader;
+    FileUtil::FileReader_c tReader;
     bool bOpenOk = tReader.Open(idfPath);
     XCHECK(bOpenOk) << "open " << idfPath << " failed.";
 
