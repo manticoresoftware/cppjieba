@@ -1,63 +1,56 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.5)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.17)
 PROJECT ( jieba VERSION "1.0.0" LANGUAGES CXX )
+
+if (NOT NO_BUILD)
+	set ( NO_BUILD OFF )
+endif ()
+
+set ( SOURCE_SUBDIR "." )
+if (NO_BUILD)
+	set (SOURCE_SUBDIR "fake_nonexistent_to_avoid_accidental_build")
+	message ( STATUS "Only headers and dict will be installed" )
+endif()
 
 include(FetchContent)
 FetchContent_Declare(
   limunp
+  SOURCE_SUBDIR "${SOURCE_SUBDIR}"
   GIT_REPOSITORY  "https://github.com/yanyiwu/limonp.git"
   GIT_TAG "v0.9.0"
 )
 
-FetchContent_MakeAvailable(limunp)
+FetchContent_MakeAvailable ( limunp )
 
-add_library(jieba INTERFACE)
+add_library ( jieba INTERFACE )
+add_library ( jieba::jieba ALIAS jieba )
 target_include_directories ( jieba INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cppjieba>$<INSTALL_INTERFACE:include> )
+
+install ( DIRECTORY include/cppjieba/ DESTINATION include )
+if (NO_BUILD)
+	install ( DIRECTORY "${FETCHCONTENT_BASE_DIR}/limunp-src/include/" DESTINATION include )
+endif()
+
+file (GLOB JIEBA_DICTS "${CMAKE_CURRENT_SOURCE_DIR}/dict/*.*" )
+
+add_library ( jiebadict INTERFACE )
+add_library ( jieba::jiebadict ALIAS jiebadict )
+target_sources ( jiebadict INTERFACE $<INSTALL_INTERFACE:dict> )
+install ( FILES ${JIEBA_DICTS} DESTINATION dict )
 
 set ( EXPORT_CMAKE_DIR "lib/cmake/jieba" )
 
-install(
-    FILES
-        ${PROJECT_SOURCE_DIR}/include/cppjieba/DictTrie.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/FullSegment.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/HMMModel.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/HMMSegment.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/Jieba.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/KeywordExtractor.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/MixSegment.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/MPSegment.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/PosTagger.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/PreFilter.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/QuerySegment.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/SegmentBase.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/SegmentTagged.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/TextRankExtractor.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/Trie.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/Unicode.hpp
-		${PROJECT_SOURCE_DIR}/include/cppjieba/reader.h
-    DESTINATION include
-)
-
-install ( TARGETS jieba EXPORT jiebaexport ARCHIVE DESTINATION "lib/$<CONFIG>" )
+install ( TARGETS jieba jiebadict EXPORT jiebaexport ARCHIVE DESTINATION lib )
 #install ( FILES "$<TARGET_FILE_DIR:jieba>/jieba.pdb" EXPORT jiebaexport DESTINATION "lib/$<CONFIG>" OPTIONAL )
-install ( EXPORT jiebaexport FILE "jiebaTargets.cmake" DESTINATION "${EXPORT_CMAKE_DIR}" NAMESPACE "jieba::" )
+install ( EXPORT jiebaexport FILE "jieba-targets.cmake" DESTINATION "${EXPORT_CMAKE_DIR}" NAMESPACE "jieba::" )
 
 include ( CMakePackageConfigHelpers )
 
-set ( pkgconfin "${CMAKE_CURRENT_BINARY_DIR}/jiebaConfig.cmake.in" )
+set ( pkgconfin "${CMAKE_CURRENT_BINARY_DIR}/jieba-config.cmake.in" )
 file ( WRITE "${pkgconfin}" "@PACKAGE_INIT@
+include(\"\${CMAKE_CURRENT_LIST_DIR}/jieba-targets.cmake\")" )
 
-if(NOT TARGET jieba::jieba)
-    include(\"\${CMAKE_CURRENT_LIST_DIR}/jiebaTargets.cmake\")
-    get_target_property ( configs jieba::jieba IMPORTED_CONFIGURATIONS )
-        foreach (config RELWITHDEBINFO)
-		if (NOT \${config} IN_LIST configs)
-			set_property ( TARGET jieba::jieba PROPERTY MAP_IMPORTED_CONFIG_\${config} Release )
-		endif ()
-	endforeach ()
-endif()" )
+configure_package_config_file ( "${pkgconfin}" "${CMAKE_CURRENT_BINARY_DIR}/jieba-config.cmake" INSTALL_DESTINATION "${EXPORT_CMAKE_DIR}" )
+install ( FILES "${CMAKE_CURRENT_BINARY_DIR}/jieba-config.cmake" DESTINATION "${EXPORT_CMAKE_DIR}" )
 
-configure_package_config_file ( "${pkgconfin}" "${CMAKE_CURRENT_BINARY_DIR}/jiebaConfig.cmake" INSTALL_DESTINATION "${EXPORT_CMAKE_DIR}" )
-install ( FILES "${CMAKE_CURRENT_BINARY_DIR}/jiebaConfig.cmake" DESTINATION "${EXPORT_CMAKE_DIR}" )
-
-write_basic_package_version_file ( "jiebaConfigVersion.cmake" COMPATIBILITY ExactVersion )
-install ( FILES "${CMAKE_CURRENT_BINARY_DIR}/jiebaConfigVersion.cmake" DESTINATION "${EXPORT_CMAKE_DIR}" )
+write_basic_package_version_file ( "jieba-config-version.cmake" COMPATIBILITY ExactVersion )
+install ( FILES "${CMAKE_CURRENT_BINARY_DIR}/jieba-config-version.cmake" DESTINATION "${EXPORT_CMAKE_DIR}" )
